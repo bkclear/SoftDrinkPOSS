@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Soft Drink POS &amp; Inventory</title>
+<style>
+        /* Modernized CSS for a better interface */
+
+        :root {
+            --primary-color: #007bff; /* Blue for primary actions */
+            --secondary-color: #6c757d; /* Grey for secondary actions */
+            --success-color: #28a745; /* Green for success/add */
+            --danger-color: #dc3545; /* Red for destructive actions */
+            --info-color: #17a2b8; /* Cyan for info/print */
+            --bg-light: #f8f9fa; /* Lighter background */
+            --bg-panel: #ffffff; /* White panel background */
+            --text-dark: #343a40; /* Darker text */
+            --border-light: #e9ecef; /* Light border */
+            --border-medium: #dee2e6; /* Medium border */
+            --shadow-light: rgba(0, 0, 0, 0.08); /* Lighter shadow */
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --border-radius: 6px;
+            --gap-spacing: 25px;
+            --padding-base: 20px;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: var(--padding-base);
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--gap-spacing);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            align-items: flex-start;
+        }
+
+        .panel {
+            background-color: var(--bg-panel);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px var(--shadow-light);
+            padding: var(--padding-base);
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Specific panel sizing adjustments */
+        #products-panel { min-width: 350px; }
+        #transaction-panel { min-width: 320px; }
+        #recipe-panel { min-width: 300px; max-width: 400px;}
+        #inventory-panel { min-width: 350px; }
+        #reports-panel { min-width: 350px; }
+
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-light);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        /* General button styles */
+        button, .btn-primary, .btn-secondary, .btn-danger, .btn-info {
+            padding: 10px 18px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            margin-right: 10px;
+            margin-top: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        button:last-child, .btn-group button:last-child {
+            margin-right: 0;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-info { background-color: var(--info-color); color: white; }
+        .product-item button {
+            background-color: var(--success-color);
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            margin-right: 0;
+            margin-top: 0;
+        }
+
+        .product-item {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-medium);
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: var(--border-radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        #product-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        #cart-items {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            flex-grow: 1;
+            overflow-y: auto;
+            min-height: 100px;
+        }
+
+        #cart-items li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px dashed var(--border-light);
+            font-size: 1em;
+        }
+        #cart-items li:last-child {
+            border-bottom: none;
+        }
+
+        #total-amount {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid var(--border-medium);
+            text-align: right;
+            color: var(--primary-color);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95em;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--border-radius);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        #current-stock {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-light);
+            padding-top: 15px;
+        }
+
+        #current-stock li {
+            padding: 8px 0;
+            font-size: 1.05em;
+            color: var(--text-dark);
+        }
+        #current-stock li span {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        #recipe-select {
+            margin-bottom: 20px;
+        }
+
+        #recipe-content {
+            background-color: var(--bg-light);
+            border: 1px dashed var(--border-medium);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            font-size: 0.95em;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+        }
+        #recipe-content h3 {
+            color: var(--success-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+        #recipe-content p {
+            margin-bottom: 8px;
+        }
+        #recipe-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        #reports-panel p, #reports-panel h3 {
+            margin-bottom: 10px;
+        }
+
+        #daily-sales-total {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+
+        #recent-transactions {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-light);
+            padding-top: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            min-height: 100px;
+        }
+
+        #recent-transactions li {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-medium);
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        #recent-transactions li strong {
+            color: var(--primary-color);
+        }
+
+        /* Button group for transaction panel */
+        #transaction-panel .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        #transaction-panel .button-group button {
+            flex-grow: 1;
+            min-width: 120px;
+            margin-right: 0;
+            margin-top: 0;
+        }
+        #transaction-panel .button-group button:last-child {
+            margin-right: 0;
+        }
+
+        /* Styles for the add product form */
+        #add-product-form {
+            display: none; /* Hidden by default */
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+        #add-product-form .input-group {
+            margin-bottom: 10px;
+        }
+        #add-product-form button {
+            background-color: var(--success-color);
+            color: white;
+            margin-right: 10px;
+        }
+        #add-product-form button:last-child {
+            background-color: var(--secondary-color);
+        }
+
+        /* Smaller chart height */
+        #salesChart {
+            max-height: 150px; /* Adjusted height for the chart */
+        }
+
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+                gap: 15px;
+            }
+            .panel {
+                min-width: unset;
+                width: 100%;
+            }
+            h2 {
+                font-size: 1.5em;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+            }
+            button, .btn-primary, .btn-secondary, .btn-danger, .btn-info {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+            .product-item, #cart-items li, .input-group input, .input-group select {
+                font-size: 0.95em;
+            }
+            #total-amount {
+                font-size: 1.6em;
+            }
+        }
+    </style>
+
+</head>
+<body><body>
+<div class="panel" id="products-panel">
+<h2>Available Soft Drinks</h2>
+<div id="product-list">
+<div class="product-item">
+<span>Coca-Cola (Case) - ₱ 550.00</span>
+<button data-price="550" data-product-id="coke">Add to Cart</button>
+</div>
+<div class="product-item">
+<span>Sprite (Case) - ₱ 520.00</span>
+<button data-price="520" data-product-id="sprite">Add to Cart</button>
+</div>
+<div class="product-item">
+<span>Royal (Case) - ₱ 530.00</span>
+<button data-price="530" data-product-id="royal">Add to Cart</button>
+</div>
+<div class="product-item">
+<span>Mountain Dew (Case) - ₱ 510.00</span>
+<button data-price="510" data-product-id="mountain_dew">Add to Cart</button>
+</div>
+<div class="product-item">
+<span>Fanta (Case) - ₱ 500.00</span>
+<button data-price="500" data-product-id="fanta">Add to Cart</button>
+</div>
+</div>
+<button class="btn-success" id="add-product-toggle-btn" style="margin-top: 20px;">Add New Product</button>
+<div class="input-group" id="add-product-form">
+<h3>Add New Product</h3>
+<div class="input-group">
+<label for="new-product-name">Product Name:</label>
+<input id="new-product-name" placeholder="e.g., Pepsi (Case)" type="text"/>
+</div>
+<div class="input-group">
+<label for="new-product-id">Product ID (Unique):</label>
+<input id="new-product-id" placeholder="e.g., pepsi" type="text"/>
+</div>
+<div class="input-group">
+<label for="new-product-price">Price (₱):</label>
+<input id="new-product-price" min="0" type="number" value="0"/>
+</div>
+<button id="add-product-btn">Add Product</button>
+<button id="cancel-add-product-btn">Cancel</button>
+</div>
+</div>
+<div class="panel" id="transaction-panel">
+<h2>Current Sale</h2>
+<ul id="cart-items">
+</ul>
+<div id="total-amount">Total: ₱ 0.00</div>
+<div class="button-group">
+<button class="btn-primary" id="checkout-btn">Checkout</button>
+<button class="btn-secondary" id="clear-cart-btn">Clear Cart</button>
+<button class="btn-info" id="print-receipt-btn">Print Last Receipt</button>
+</div>
+</div>
+<div class="panel" id="recipe-panel">
+<h2>Soft Drink Info &amp; Recipes</h2>
+<select id="recipe-select">
+<option value="">Select a drink for info</option>
+<option value="coke">Coca-Cola</option>
+<option value="sprite">Sprite</option>
+<option value="royal">Royal</option>
+<option value="mountain_dew">Mountain Dew</option>
+<option value="fanta">Fanta</option>
+</select>
+<div id="recipe-content">
+<p>Select a drink to view its information or recipe.</p>
+</div>
+</div>
+<div class="panel" id="inventory-panel">
+<h2>Inventory Management</h2>
+<div class="input-group">
+<label for="inventory-drink">Select Drink:</label>
+<select id="inventory-drink">
+<option value="coke">Coca-Cola</option>
+<option value="sprite">Sprite</option>
+<option value="royal">Royal</option>
+<option value="mountain_dew">Mountain Dew</option>
+<option value="fanta">Fanta</option>
+</select>
+</div>
+<div class="input-group">
+<label for="inventory-type">Action:</label>
+<select id="inventory-type">
+<option value="in">Supply In</option>
+<option value="out">Sales Out (for manual adjustment)</option>
+</select>
+</div>
+<div class="input-group">
+<label for="inventory-quantity">Quantity (Cases):</label>
+<input id="inventory-quantity" min="1" type="number" value="1"/>
+</div>
+<button class="btn-primary" id="update-inventory-btn">Update Inventory</button>
+<h3>Current Stock Levels</h3>
+<ul id="current-stock">
+<li>Coca-Cola: <span id="stock-coke">0</span> cases</li>
+<li>Sprite: <span id="stock-sprite">0</span> cases</li>
+<li>Royal: <span id="stock-royal">0</span> cases</li>
+<li>Mountain Dew: <span id="stock-mountain_dew">0</span> cases</li>
+<li>Fanta: <span id="stock-fanta">0</span> cases</li>
+</ul>
+</div>
+<div class="panel" id="reports-panel">
+<h2>Sales Reports (Basic)</h2>
+<div class="input-group">
+<label for="start-date">Start Date:</label>
+<input id="start-date" type="date"/>
+</div>
+<div class="input-group">
+<label for="end-date">End Date:</label>
+<input id="end-date" type="date"/>
+</div>
+<button class="btn-primary" id="apply-date-filter-btn">Apply Filter</button>
+<button class="btn-info" id="download-sales-csv-btn">Download Sales CSV</button>
+<p>Total Sales Today: ₱ <span id="daily-sales-total">0.00</span></p>
+<h3>Recent Transactions:</h3>
+<ul id="recent-transactions">
+</ul>
+<div style="margin-top: 20px;">
+<h3>Sales Overview</h3>
+<canvas height="200" id="" width="400"></canvas>
+</div>
+</div>
+<script>
+        // Debounce function to limit how often a function is called
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const productList = document.getElementById('product-list');
+            const cartItems = document.getElementById('cart-items');
+            const totalAmountSpan = document.getElementById('total-amount');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            const clearCartBtn = document.getElementById('clear-cart-btn');
+            const recipeSelect = document.getElementById('recipe-select');
+            const recipeContent = document.getElementById('recipe-content');
+            const inventoryDrinkSelect = document.getElementById('inventory-drink');
+            const inventoryTypeSelect = document.getElementById('inventory-type');
+            const inventoryQuantityInput = document.getElementById('inventory-quantity');
+            const updateInventoryBtn = document.getElementById('update-inventory-btn');
+            const dailySalesTotalSpan = document.getElementById('daily-sales-total');
+            const recentTransactionsList = document.getElementById('recent-transactions');
+            const printReceiptBtn = document.getElementById('print-receipt-btn');
+
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const applyDateFilterBtn = document.getElementById('apply-date-filter-btn');
+            const downloadSalesCsvBtn = document.getElementById('download-sales-csv-btn');
+            const Canvas = document.getElementById('');
+
+            const addProductToggleBtn = document.getElementById('add-product-toggle-btn');
+            const addProductForm = document.getElementById('add-product-form');
+            const newProductNameInput = document.getElementById('new-product-name');
+            const newProductIdInput = document.getElementById('new-product-id');
+            const newProductPriceInput = document.getElementById('new-product-price');
+            const addProductBtn = document.getElementById('add-product-btn');
+            const cancelAddProductBtn = document.getElementById('cancel-add-product-btn');
+
+
+            let cart = [];
+            let inventory = {
+                'coke': 100, // Initial stock for demonstration
+                'sprite': 80,
+                'royal': 90,
+                'mountain_dew': 70,
+                'fanta': 60
+            };
+            let productPrices = {
+                'coke': 550.00,
+                'sprite': 520.00,
+                'royal': 530.00,
+                'mountain_dew': 510.00,
+                'fanta': 500.00
+            };
+            let dailySales = 0;
+            let transactionHistory = [];
+            let ;
+            // Debounced version of 
+            const debouncedUpdateSalesChart = debounce(, 300); // 300ms delay
+
+            function updateStockDisplay() {
+                // Clear existing stock display to re-render
+                document.getElementById('current-stock').innerHTML = '';
+                for (const productId in inventory) {
+                    const listItem = document.createElement('li');
+                    listItem.id = `stock-${productId}`; // Assign an ID for easy updates
+                    listItem.innerHTML = `${formatProductName(productId)}: <span>${inventory[productId]}</span> cases`;
+                    document.getElementById('current-stock').appendChild(listItem);
+                }
+            }
+
+            function formatProductName(productId) {
+                // Simple capitalization for display, can be enhanced for more complex names
+                return productId.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            }
+
+            // Function to render products in the "Available Soft Drinks" panel
+            function renderProducts() {
+                productList.innerHTML = ''; // Clear existing products
+                for (const productId in productPrices) {
+                    const productItemDiv = document.createElement('div');
+                    productItemDiv.className = 'product-item';
+                    productItemDiv.innerHTML = `
+                        <span>${formatProductName(productId)} (Case) - &#8369; ${productPrices[productId].toFixed(2)}</span>
+                        <button data-product-id="${productId}" data-price="${productPrices[productId]}">Add to Cart</button>
+                    `;
+                    productList.appendChild(productItemDiv);
+                }
+                // Also update the inventory and recipe dropdowns to include new products
+                updateInventoryDrinkSelect();
+                updateRecipeSelect();
+            }
+
+            function updateInventoryDrinkSelect() {
+                inventoryDrinkSelect.innerHTML = ''; // Clear existing options
+                for (const productId in inventory) {
+                    const option = document.createElement('option');
+                    option.value = productId;
+                    option.textContent = formatProductName(productId);
+                    inventoryDrinkSelect.appendChild(option);
+                }
+            }
+
+            function updateRecipeSelect() {
+                recipeSelect.innerHTML = '<option value="">Select a drink for info</option>'; // Reset and add default
+                for (const productId in productPrices) {
+                    const option = document.createElement('option');
+                    option.value = productId;
+                    option.textContent = formatProductName(productId);
+                    recipeSelect.appendChild(option);
+                }
+            }
+
+
+            updateStockDisplay(); // Initial display of stock
+            renderProducts(); // Initial rendering of products
+
+            productList.addEventListener('click', (event) => {
+                if (event.target.tagName === 'BUTTON') {
+                    const productId = event.target.dataset.productId;
+                    const price = parseFloat(event.target.dataset.price);
+                    const productName = event.target.previousElementSibling.textContent.split(' - ')[0];
+
+                    if (inventory[productId] > 0) {
+                        const existingItem = cart.find(item => item.id === productId);
+                        if (existingItem) {
+                            existingItem.quantity++;
+                        } else {
+                            cart.push({ id: productId, name: productName, price: price, quantity: 1 });
+                        }
+                        inventory[productId]--;
+                        updateCartDisplay();
+                        updateStockDisplay();
+                    } else {
+                        alert(`Sorry, ${productName} is out of stock!`);
+                    }
+                }
+            });
+
+            function updateCartDisplay() {
+                cartItems.innerHTML = '';
+                let total = 0;
+                cart.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `${item.name} x ${item.quantity} <span>&#8369; ${(item.price * item.quantity).toFixed(2)}</span>`;
+                    cartItems.appendChild(li);
+                    total += item.price * item.quantity;
+                });
+                totalAmountSpan.textContent = `Total: &#8369; ${total.toFixed(2)}`;
+            }
+
+            function updateRecentTransactionsDisplay(transactionsToDisplay = transactionHistory) {
+                recentTransactionsList.innerHTML = '';
+                transactionsToDisplay.forEach(transactionDetails => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${transactionDetails.timestamp}</strong> - Total: &#8369; ${transactionDetails.total.toFixed(2)} (${transactionDetails.items.map(item => `${item.name} x ${item.quantity}`).join(', ')})`;
+                    recentTransactionsList.appendChild(li);
+                });
+            }
+
+            checkoutBtn.addEventListener('click', () => {
+                if (cart.length === 0) {
+                    alert('Cart is empty!');
+                    return;
+                }
+
+                const totalSale = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                dailySales += totalSale;
+                dailySalesTotalSpan.textContent = dailySales.toFixed(2);
+
+                const now = new Date();
+                const transactionDetails = {
+                    timestamp: now.toLocaleString(),
+                    total: totalSale,
+                    items: [...cart] // Copy cart items
+                };
+                transactionHistory.unshift(transactionDetails); // Add to the beginning
+                updateRecentTransactionsDisplay();
+                debouncedUpdateSales// Chart usage removed); // Update chart on checkout
+
+                // For printing receipt (simplified)
+                localStorage.setItem('lastReceipt', JSON.stringify(transactionDetails));
+
+                cart = []; // Clear cart
+                updateCartDisplay();
+                alert('Checkout successful!');
+            });
+
+            clearCartBtn.addEventListener('click', () => {
+                if (cart.length === 0) {
+                    alert('Cart is already empty!');
+                    return;
+                }
+                // Return items to inventory
+                cart.forEach(item => {
+                    inventory[item.id] += item.quantity;
+                });
+                cart = [];
+                updateCartDisplay();
+                updateStockDisplay();
+                alert('Cart cleared!');
+            });
+
+            printReceiptBtn.addEventListener('click', () => {
+                const lastReceipt = JSON.parse(localStorage.getItem('lastReceipt'));
+                if (lastReceipt) {
+                    let receiptContent = `--- Receipt ---\nDate: ${lastReceipt.timestamp}\n\nItems:\n`;
+                    lastReceipt.items.forEach(item => {
+                        receiptContent += `${item.name} x ${item.quantity} = &#8369; ${(item.price * item.quantity).toFixed(2)}\n`;
+                    });
+                    receiptContent += `\nTotal: &#8369; ${lastReceipt.total.toFixed(2)}\n--- Thank You! ---`;
+                    alert(receiptContent); // In a real app, this would open a print dialog
+                } else {
+                    alert('No recent receipt to print.');
+                }
+            });
+
+
+            recipeSelect.addEventListener('change', (event) => {
+                const selectedDrink = event.target.value;
+                if (selectedDrink) {
+                    // This is placeholder content. In a real app, you'd fetch this from a database or object.
+                    const recipes = {
+                        coke: { name: 'Coca-Cola', info: 'Classic carbonated soft drink. Ingredients: Carbonated water, high fructose corn syrup, caramel color, phosphoric acid, natural flavors, caffeine.', uses: 'Refreshing drink, mixer.' },
+                        sprite: { name: 'Sprite', info: 'Lemon-lime flavored soft drink. Ingredients: Carbonated water, high fructose corn syrup, citric acid, natural flavors, sodium citrate, sodium benzoate.', uses: 'Refreshing drink, good with meals.' },
+                        royal: { name: 'Royal Tru-Orange', info: 'Orange-flavored carbonated drink popular in the Philippines. Ingredients: Carbonated water, sugar, orange flavor, citric acid, sodium benzoate, artificial colors.', uses: 'Popular Filipino drink.' },
+                        mountain_dew: { name: 'Mountain Dew', info: 'Citrus-flavored soft drink with high caffeine content. Ingredients: Carbonated water, high fructose corn syrup, concentrated orange juice, citric acid, natural flavors, sodium benzoate, caffeine, gum arabic, EDTA, Yellow 5.', uses: 'Energy boost, citrus refreshment.' },
+                        fanta: { name: 'Fanta', info: 'Fruit-flavored carbonated soft drink, often orange-flavored. Ingredients: Carbonated water, high fructose corn syrup, citric acid, natural flavors, modified food starch, potassium sorbate, sodium benzoate, Yellow 6, Red 40.', uses: 'Sweet and fruity drink.' }
+                    };
+                    const drinkInfo = recipes[selectedDrink] || { name: 'Unknown', info: 'No information available.', uses: '' };
+                    recipeContent.innerHTML = `<h3>${drinkInfo.name}</h3><p><strong>Info:</strong> ${drinkInfo.info}</p><p><strong>Uses:</strong> ${drinkInfo.uses}</p>`;
+                } else {
+                    recipeContent.innerHTML = '<p>Select a drink to view its information or recipe.</p>';
+                }
+            });
+
+            updateInventoryBtn.addEventListener('click', () => {
+                const drinkId = inventoryDrinkSelect.value;
+                const type = inventoryTypeSelect.value;
+                const quantity = parseInt(inventoryQuantityInput.value);
+
+                if (!drinkId || isNaN(quantity) || quantity <= 0) {
+                    alert('Please select a drink and enter a valid quantity.');
+                    return;
+                }
+
+                if (type === 'in') {
+                    inventory[drinkId] += quantity;
+                    alert(`Added ${quantity} cases of ${formatProductName(drinkId)} to inventory.`);
+                } else if (type === 'out') {
+                    if (inventory[drinkId] >= quantity) {
+                        inventory[drinkId] -= quantity;
+                        alert(`Removed ${quantity} cases of ${formatProductName(drinkId)} from inventory (manual adjustment).`);
+                    } else {
+                        alert(`Not enough ${formatProductName(drinkId)} in stock to remove ${quantity} cases.`);
+                    }
+                }
+                updateStockDisplay();
+                inventoryQuantityInput.value = 1; // Reset quantity
+            });
+
+            // Sales Chart Initialization
+            const salesData = {
+                labels: [], // Dates
+                datasets: [{
+                    label: 'Daily Sales',
+                    data: [], // Sales amounts
+                    backgroundColor: 'rgba(0, 123, 255, 0.5)',
+                    borderColor: 'rgba(0, 123, 255, 1)',
+                    borderWidth: 1,
+                    fill: false,
+                    tension: 0.1
+                }]
+            };
+
+            const Config = {
+                type: 'line',
+                data: salesData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Sales (&#8369;)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    }
+                }
+            };
+             = new // Chart usage removedCanvas, Config);
+
+            function () {
+                // Aggregate sales by date
+                const salesByDate = {};
+                transactionHistory.forEach(transaction => {
+                    const date = new Date(transaction.timestamp).toLocaleDateString();
+                    if (!salesByDate[date]) {
+                        salesByDate[date] = 0;
+                    }
+                    salesByDate[date] += transaction.total;
+                });
+
+                // Sort dates and populate chart data
+                const sortedDates = Object.keys(salesByDate).sort((a, b) => new Date(a) - new Date(b));
+                salesData.labels = sortedDates;
+                salesData.datasets[0].data = sortedDates.map(date => salesByDate[date]);
+
+                .update();
+            }
+
+            // Date filtering for reports
+            applyDateFilterBtn.addEventListener('click', () => {
+                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+
+                const filteredTransactions = transactionHistory.filter(transaction => {
+                    const transactionDate = new Date(transaction.timestamp);
+                    let matchesFilter = true;
+                    if (startDate && transactionDate < startDate) {
+                        matchesFilter = false;
+                    }
+                    if (endDate && transactionDate > endDate) {
+                        matchesFilter = false;
+                    }
+                    return matchesFilter;
+                });
+                updateRecentTransactionsDisplay(filteredTransactions);
+                (); // Re-render chart with filtered data if needed, or adjust chart logic
+            });
+
+            // Download CSV
+            downloadSalesCsvBtn.addEventListener('click', () => {
+                let csvContent = "data:text/csv;charset=utf-8,Timestamp,Total Sale,Items\n";
+                transactionHistory.forEach(transaction => {
+                    const itemsString = transaction.items.map(item => `${item.name} (x${item.quantity})`).join('; ');
+                    csvContent += `${transaction.timestamp},${transaction.total.toFixed(2)},"${itemsString}"\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "sales_report.csv");
+                document.body.appendChild(link); // Required for Firefox
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Toggle Add New Product Form
+            addProductToggleBtn.addEventListener('click', () => {
+                addProductForm.style.display = addProductForm.style.display === 'block' ? 'none' : 'block';
+                // Clear form fields when opening
+                newProductNameInput.value = '';
+                newProductIdInput.value = '';
+                newProductPriceInput.value = 0;
+            });
+
+            cancelAddProductBtn.addEventListener('click', () => {
+                addProductForm.style.display = 'none';
+                newProductNameInput.value = '';
+                newProductIdInput.value = '';
+                newProductPriceInput.value = 0;
+            });
+
+            // Add Product Functionality
+            addProductBtn.addEventListener('click', () => {
+                const name = newProductNameInput.value.trim();
+                const id = newProductIdInput.value.trim().toLowerCase().replace(/\s/g, '_'); // Generate ID
+                const price = parseFloat(newProductPriceInput.value);
+
+                if (!name || !id || isNaN(price) || price <= 0) {
+                    alert('Please enter a valid product name, unique ID, and a price greater than 0.');
+                    return;
+                }
+
+                if (productPrices[id]) {
+                    alert(`Product with ID "${id}" already exists. Please choose a different ID.`);
+                    return;
+                }
+
+                productPrices[id] = price;
+                inventory[id] = 0; // New products start with 0 stock, user can add via inventory management
+                
+                renderProducts(); // Re-render the products list to include the new product
+                updateStockDisplay(); // Update stock display with the new product
+                alert(`Product "${name}" added successfully! Remember to add initial stock via Inventory Management.`);
+                
+                addProductForm.style.display = 'none'; // Hide form after adding
+                newProductNameInput.value = '';
+                newProductIdInput.value = '';
+                newProductPriceInput.value = 0;
+            });
+
+        });
+    </script>
+<script>
+    const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz4DmZtjOI5R6h-b-ndc3Dj1r-s95-teg_nJyF7U7jr7yuDk9llzIGhpPdM3enjv0yx/exec"; // Replace with your actual Web App URL
+
+    checkoutBtn.addEventListener('click', () => {
+        if (cart.length === 0) {
+            alert('Cart is empty!');
+            return;
+        }
+
+        const totalSale = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        dailySales += totalSale;
+        dailySalesTotalSpan.textContent = dailySales.toFixed(2);
+
+        const now = new Date();
+        const transactionDetails = {
+            timestamp: now.toLocaleString(),
+            total: totalSale,
+            items: [...cart] // Clone of cart
+        };
+        transactionHistory.unshift(transactionDetails);
+        updateRecentTransactionsDisplay();
+        debouncedUpdateSales// Chart usage removed);
+
+        // Save to Google Sheets
+        cart.forEach(item => {
+            fetch(GOOGLE_SHEET_WEBAPP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    productId: item.id,
+                    productName: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    total: item.price * item.quantity
+                })
+            });
+        });
+
+        // Store receipt locally
+        localStorage.setItem('lastReceipt', JSON.stringify(transactionDetails));
+
+        cart = []; // Clear cart
+        updateCartDisplay();
+        alert('Checkout successful! Data sent to Google Sheet.');
+    });
+</script>
+</body></body>
+</html>
