@@ -3,450 +3,599 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SoftDrinks POS Dashboard</title>
+  <title>SoftDrinks POS Pro</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; background: #f2f2f2; color: #333; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 2rem; }
-    .card {
-      background: #009688; color: white; border-radius: 12px; padding: 1.2rem;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
+    /* CSS Variables for easy theming */
+    :root {
+      --primary-color: #009688;
+      --primary-dark: #00796b;
+      --primary-light: #b2dfdb;
+      --background-color: #f4f6f9;
+      --text-color: #333;
+      --card-bg-color: #ffffff;
+      --border-color: #e0e0e0;
+      --shadow-color: rgba(0, 0, 0, 0.08);
+      --danger-color: #e53935;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Roboto', sans-serif;
+      background: var(--background-color);
+      padding: 1rem;
+      max-width: 800px;
+      margin: auto;
+      color: var(--text-color);
+    }
+    
+    /* Loading Overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        display: none; /* Hidden by default */
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .spinner {
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid var(--primary-color);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+
+    h2 {
+      color: var(--primary-dark);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0 16px 0;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      box-sizing: border-box;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    button {
+      transition: background 0.3s ease, transform 0.1s ease;
+      cursor: pointer;
+      border: none;
+      font-weight: bold;
+    }
+    
+    button:active {
+        transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 15px var(--shadow-color);
+    }
+
+    .dashboard div {
       text-align: center;
     }
-    .card h3 { margin: 0.2rem 0; font-size: 1.5rem; }
-    .card p { margin: 0; font-size: 0.9rem; opacity: 0.9; }
-    input, select, button {
-      width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px;
-      border: 1px solid #ccc; box-sizing: border-box;
+    
+    .dashboard p {
+        margin: 0 0 0.5rem 0;
+        opacity: 0.9;
     }
-    button { background: #009688; color: white; font-weight: bold; border: none; cursor: pointer; transition: background 0.3s ease; }
-    button:hover { background: #00796b; }
-    .section { background: white; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .receipt { display:none; background:#fff; padding:1.5rem; border:1px solid #eee; border-radius:8px; margin-top:1.5rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
-    .receipt p { margin: 5px 0; line-height: 1.4; }
-    .receipt-item { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #eee; }
-    .receipt-total { font-weight: bold; margin-top: 10px; border-top: 2px solid #333; padding-top: 10px; }
-    .cart-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 0; border-bottom: 1px dashed #eee;
-    }
-    .cart-item button { width: auto; padding: 5px 10px; margin: 0 0 0 10px; background: #f44336; }
-    .cart-item button:hover { background: #d32f2f; }
-    .total-due { font-size: 1.4rem; font-weight: bold; text-align: right; margin-top: 15px; }
-    .button-group { display: flex; gap: 10px; margin-top: 10px; }
-    .button-group button { flex: 1; }
-    .clear-cart-btn { background: #f44336; }
-    .clear-cart-btn:hover { background: #d32f2f; }
-    #add-to-cart-btn { background: #4CAF50; }
-    #add-to-cart-btn:hover { background: #45a049; }
-    #complete-sale-btn { background: #2196F3; }
-    #complete-sale-btn:hover { background: #1976D2; }
-    .store-name { text-align: center; font-size: 1.8rem; font-weight: bold; margin-bottom: 1rem; color: #009688; }
-
-    /* Print-specific styles (for the new print window) */
-    @media print {
-      body {
+    .dashboard h3 {
         margin: 0;
-        padding: 0;
-        background: none;
-        color: #000; /* Ensure black text for printing */
-      }
-      .receipt-to-print {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 1.5rem;
-        border: none; /* Remove border for cleaner print */
-        box-shadow: none; /* Remove shadow for cleaner print */
-      }
-      .receipt-to-print .store-name {
-        margin-top: 0;
-      }
-      /* Hide elements not needed in print, if the whole page were printed */
-      .grid, .section:not(.receipt), .button-group, #add-to-cart-btn,
-      #sell_product, #sell_unit, #sell_price, #sell_qty, hr {
-        display: none !important;
-      }
-      /* Ensure receipt is visible if printing the whole page, though our new function handles this */
+        font-size: 2rem;
+    }
+
+    .toggle-header {
+      background: var(--card-bg-color);
+      color: var(--primary-dark);
+      padding: 14px 20px;
+      border-radius: 8px;
+      margin-top: 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s ease;
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toggle-header:hover {
+      background: #e8f5e9; /* A very light green */
+    }
+
+    .toggle-content {
+      display: none;
+      border: 1px solid var(--border-color);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 1.5rem;
+      background: var(--card-bg-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: #f8f8f8;
+      font-weight: 600;
+    }
+    
+    td .btn-danger {
+        background-color: var(--danger-color);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+    }
+
+    #status {
+      text-align: center;
+      font-weight: bold;
+      color: var(--danger-color);
+      background: #ffebee;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      display: none; /* Hidden by default */
+    }
+
+    .receipt {
+      padding: 1.5rem;
+      border: 2px dashed #999;
+      margin-top: 1.5rem;
+      background: #fefcf3;
+    }
+
+    .store-title {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    
+    .print-button {
+      margin-top: 1rem;
+      background-color: var(--primary-dark);
+    }
+
+    @media print {
+      body, .toggle-header, .dashboard, #paymentSection button, #status { visibility: hidden; }
+      .receipt, .receipt * { visibility: visible; }
       .receipt {
-        display: block !important;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        border: none;
+        box-shadow: none;
       }
-      button { /* Hide print button itself in the print output */
-        display: none !important;
-      }
+      .print-button { display: none; }
     }
   </style>
 </head>
 <body>
+  
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p>Processing Transaction...</p>
+  </div>
 
-  <div class="store-name">LLAVORE VARIETY STORE</div>
+  <div id="status"></div>
 
-  <h2>📊 Dashboard</h2>
-  <div class="grid">
-    <div class="card">
-      <h3 id="totalSales">₱0</h3>
+  <h2>📈 SoftDrinks POS Pro</h2>
+  <div class="dashboard">
+    <div>
       <p>Sales Today</p>
+      <h3 id="totalSales">₱0.00</h3>
     </div>
-    <div class="card">
-      <h3 id="totalExpenses">₱0</h3>
-      <p>Expenses Today</p>
-    </div>
-    <div class="card">
-      <h3 id="netProfit">₱0</h3>
-      <p>Net Profit</p>
-    </div>
-    <div class="card">
+    <div>
+      <p>Products</p>
       <h3 id="totalItems">0</h3>
-      <p>Total Products</p>
     </div>
   </div>
 
-  <div class="section">
-    <h3>🛒 Sell Product</h3>
-    <select id="sell_product" onchange="autoFillPrice()">
+  <div class="toggle-header" onclick="toggleSection('addProductSection')"><span>➕ Add New Product</span><span>▼</span></div>
+  <div id="addProductSection" class="toggle-content">
+    <input id="add_name" placeholder="Product Name" />
+    <input id="add_unit" placeholder="Unit (e.g. bottle, can)" />
+    <input id="add_buy_price" type="number" placeholder="Buy Price (Cost per item)" />
+    <input id="add_price" type="number" placeholder="Sell Price" />
+    <input id="add_stock" type="number" placeholder="Stock Quantity" />
+    <select id="add_paid">
+      <option value="Paid">Paid</option>
+      <option value="Not Paid">Not Paid</option>
+    </select>
+    <button class="btn-primary" onclick="addProduct()">Add Product & Record Expense</button>
+  </div>
+
+  <div class="toggle-header" onclick="toggleSection('cartSection')"><span>🛒 Point of Sale</span><span>▼</span></div>
+  <div id="cartSection" class="toggle-content">
+    <select id="sell_product">
       <option value="">Select Product</option>
     </select>
-    <input id="sell_unit" disabled placeholder="Unit" />
-    <input id="sell_price" type="number" placeholder="Price per Unit" />
-    <input id="sell_qty" type="number" placeholder="Quantity" min="1" value="1" />
-    <button id="add-to-cart-btn" onclick="addToCart()">Add to Cart</button>
+    <input id="sell_qty" type="number" placeholder="Quantity" />
+    <button class="btn-primary" onclick="addToCart()">Add to Cart</button>
 
-    <hr style="margin: 20px 0; border: none; border-top: 1px dashed #ccc;">
+    <table id="cartTable">
+      <thead>
+        <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th>Action</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
-    <h3>🛒 Current Cart</h3>
-    <div id="cartContent">
-      <p>No items in cart.</p>
-    </div>
-    <div class="total-due">
-      Total Due: <span id="cartTotal">₱0</span>
-    </div>
-    <div class="button-group">
-      <button id="complete-sale-btn" onclick="completeSale()" disabled>Complete Sale</button>
-      <button class="clear-cart-btn" onclick="clearCart()" disabled>Clear Cart</button>
-    </div>
+  <div class="toggle-header" onclick="toggleSection('paymentSection')"><span>💵 Payment & Receipt</span><span>▼</span></div>
+  <div id="paymentSection" class="toggle-content">
+    <input id="cash_received" type="number" placeholder="Cash Received" />
+    <input id="cash_change" placeholder="Change" readonly style="background:#eee;"/>
+    <button class="btn-primary" onclick="processSale()">✅ Process Sale</button>
 
-    <div class="receipt" id="receipt">
-      <div class="store-name">LLAVORE VARIETY STORE</div>
-      <h4>🧾 Receipt</h4>
+    <div class="receipt" id="receipt" style="display:none;">
+      <div class="store-title">🧾 LLAVORE VARIETY STORE</div>
       <div id="receiptContent"></div>
-      <button onclick="printReceipt()">🖨 Print Receipt</button>
+      <button class="btn-primary print-button" onclick="window.print()">🖨 Print Receipt</button>
     </div>
+  </div>
+
+  <div class="toggle-header" onclick="toggleSection('salesHistorySection')"><span>📅 Sales History</span><span>▼</span></div>
+  <div id="salesHistorySection" class="toggle-content">
+    <table id="salesTable">
+      <thead>
+        <tr><th>Product</th><th>Qty</th><th>Total</th><th>Time</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="toggle-header" onclick="toggleSection('expensesSection')"><span>💸 Expenses History</span><span>▼</span></div>
+  <div id="expensesSection" class="toggle-content">
+    <table id="expensesTable">
+      <thead>
+        <tr><th>Description</th><th>Amount</th><th>Status</th><th>Time</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <script>
-    const SHEET_URL = "https://script.google.com/macros/s/AKfycbwFQyOrtTf694cH6wjTEJ067591IbUxqk3kN5clDWdtgC-fypBa9KdvxU6EcNbRHPQ/exec"; // IMPORTANT: Replace with your actual deployed script URL
-    const SALES_SHEET_URL = "https://docs.google.com/spreadsheets/d/1omEc8zI_eHq3jxPvR8K5KsLjqYcRgNd16FjedOtzvng/gviz/tq?tqx=out:csv&sheet=SalesData";
-    const EXPENSES_SHEET_URL = "https://docs.google.com/spreadsheets/d/1omEc8zI_eHq3jxPvR8K5KsLjqYcRgNd16FjedOtzvng/gviz/tq?tqx=out:csv&sheet=Expenses";
-
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbyol14uzmmDq3KNNVZqQ6WMMeisZrwCA_GdVcHCF5deeRer98ikDXvUy6dipJSM3ZbY/exec";
     let inventoryData = [];
-    let currentTransactionItems = [];
+    let cart = [];
+    let syncQueue = JSON.parse(localStorage.getItem("syncQueue") || "[]");
 
+    // --- Event Listeners ---
+    window.addEventListener("online", () => {
+      updateStatus();
+      syncOfflineData();
+    });
+    window.addEventListener("offline", updateStatus);
+    
     // --- Utility Functions ---
-    function formatCurrency(amount) {
-      return `₱${parseFloat(amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    }
+    const showLoader = (show) => {
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    };
 
-    function todayYYYYMMDD() {
-      const d = new Date();
-      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    }
-
-    // --- Inventory and Dashboard Functions ---
-    async function fetchInventory() {
-      try {
-        const res = await fetch(SHEET_URL + "?action=getInventory");
-        const data = await res.json();
-        inventoryData = data.slice(1); // skip header
-        updateDropdown();
-        document.getElementById("totalItems").textContent = inventoryData.length;
-      } catch (error) {
-        console.error("Error fetching inventory:", error);
-        alert("Failed to load inventory data. Please check your internet connection and script deployment.");
-      }
-    }
-
-    function updateDropdown() {
-      const select = document.getElementById("sell_product");
-      select.innerHTML = '<option value="">Select Product</option>';
-      inventoryData.forEach(row => {
-        const [product, qty] = row;
-        select.innerHTML += `<option value="${product}">${product} (Stock: ${qty})</option>`;
-      });
-    }
-
-    function autoFillPrice() {
-      const selected = document.getElementById("sell_product").value;
-      const product = inventoryData.find(row => row[0] === selected);
-      if (product) {
-        document.getElementById("sell_price").value = product[4]; // Assuming price is at index 4
-        document.getElementById("sell_unit").value = product[2]; // Assuming unit is at index 2
-        document.getElementById("sell_qty").max = product[1]; // Set max quantity to current stock
+    function updateStatus() {
+      const statusEl = document.getElementById("status");
+      if (navigator.onLine) {
+        statusEl.style.display = "none";
       } else {
-        document.getElementById("sell_price").value = "";
-        document.getElementById("sell_unit").value = "";
-        document.getElementById("sell_qty").max = "";
+        statusEl.textContent = "⚠️ You are offline. Changes will sync when back online.";
+        statusEl.style.display = "block";
       }
     }
 
-    async function loadDashboard() {
-      const today = todayYYYYMMDD();
-      let totalSales = 0;
-      let totalExpenses = 0;
+    function toggleSection(id) {
+      const section = document.getElementById(id);
+      const header = section.previousElementSibling;
+      const arrow = header.querySelector('span:last-child');
 
-      // Fetch Sales Data
-      try {
-        const salesRes = await fetch(SALES_SHEET_URL);
-        if (!salesRes.ok) throw new Error(`HTTP error! status: ${salesRes.status}`);
-        const salesText = await salesRes.text();
-        salesText.split("\n").slice(1).forEach(row => {
-          const cols = row.split(",");
-          if (cols[0]) { // Ensure the date column is not empty
-            const saleDate = cols[0].trim().split(' ')[0]; // Extract YYYY-MM-DD from "YYYY-MM-DD HH:MM:SS"
-            if (saleDate === today) {
-              totalSales += parseFloat(cols[5] || 0); // Assuming total is at index 5
-            }
-          }
-        });
-      } catch (error) {
-        console.error("Failed to fetch sales data:", error);
-        // alert("Could not load sales data for dashboard."); // Optional: alert user
-      }
-
-      // Fetch Expenses Data
-      try {
-        const expensesRes = await fetch(EXPENSES_SHEET_URL);
-        if (!expensesRes.ok) throw new Error(`HTTP error! status: ${expensesRes.status}`);
-        const expText = await expensesRes.text();
-        expText.split("\n").slice(1).forEach(row => {
-          const cols = row.split(",");
-          if (cols[0]) { // Ensure the date column is not empty
-            const expenseDate = cols[0].trim().split(' ')[0]; // Extract YYYY-MM-DD
-            if (expenseDate === today) {
-              totalExpenses += parseFloat(cols[2] || 0); // Assuming amount is at index 2
-            }
-          }
-        });
-      } catch (error) {
-        console.error("Failed to fetch expenses data:", error);
-        // alert("Could not load expenses data for dashboard."); // Optional: alert user
-      }
-
-      document.getElementById("totalSales").textContent = formatCurrency(totalSales);
-      document.getElementById("totalExpenses").textContent = formatCurrency(totalExpenses);
-      document.getElementById("netProfit").textContent = formatCurrency(totalSales - totalExpenses);
-    }
-
-    // --- Cart and Sale Functions ---
-    function addToCart() {
-      const product = document.getElementById("sell_product").value;
-      const unit = document.getElementById("sell_unit").value;
-      const quantity = parseInt(document.getElementById("sell_qty").value);
-      const price = parseFloat(document.getElementById("sell_price").value);
-
-      if (!product || isNaN(quantity) || isNaN(price) || quantity <= 0) {
-        alert("Please select a product and enter valid quantity/price.");
-        return;
-      }
-
-      const itemInInventory = inventoryData.find(row => row[0] === product);
-      if (!itemInInventory) {
-        alert("Selected product not found in inventory.");
-        return;
-      }
-
-      const availableStock = parseInt(itemInInventory[1]);
-
-      // Check if product already in cart, update quantity
-      const existingCartItemIndex = currentTransactionItems.findIndex(item => item.product === product);
-      if (existingCartItemIndex > -1) {
-        const newQty = currentTransactionItems[existingCartItemIndex].quantity + quantity;
-        if (newQty > availableStock) {
-          alert(`Not enough stock for ${product}. Available: ${availableStock}`);
-          return;
-        }
-        currentTransactionItems[existingCartItemIndex].quantity = newQty;
-        currentTransactionItems[existingCartItemIndex].total = newQty * price;
+      if (section.style.display === "block") {
+          section.style.display = "none";
+          arrow.textContent = '▼';
       } else {
-        if (quantity > availableStock) {
-          alert(`Not enough stock for ${product}. Available: ${availableStock}`);
-          return;
-        }
-        currentTransactionItems.push({ product, unit, quantity, price, total: quantity * price });
+          section.style.display = "block";
+          arrow.textContent = '▲';
       }
-
-      updateCartDisplay();
-      document.getElementById("sell_product").value = "";
-      document.getElementById("sell_unit").value = "";
-      document.getElementById("sell_price").value = "";
-      document.getElementById("sell_qty").value = "1";
-      document.getElementById("sell_qty").max = ""; // Clear max value
     }
-
-    function updateCartDisplay() {
-      const cartContent = document.getElementById("cartContent");
-      const cartTotalElement = document.getElementById("cartTotal");
-      const completeSaleBtn = document.getElementById("complete-sale-btn");
-      const clearCartBtn = document.getElementById("clear-cart-btn");
-
-      if (currentTransactionItems.length === 0) {
-        cartContent.innerHTML = '<p>No items in cart.</p>';
-        cartTotalElement.textContent = formatCurrency(0);
-        completeSaleBtn.disabled = true;
-        clearCartBtn.disabled = true;
-        return;
-      }
-
-      let totalDue = 0;
-      cartContent.innerHTML = '';
-      currentTransactionItems.forEach((item, index) => {
-        totalDue += item.total;
-        const itemDiv = document.createElement('div');
-        itemDiv.classList.add('cart-item');
-        itemDiv.innerHTML = `
-          <span>${item.product} x ${item.quantity} (${item.unit}) - ${formatCurrency(item.total)}</span>
-          <button onclick="removeItemFromCart(${index})">Remove</button>
-        `;
-        cartContent.appendChild(itemDiv);
-      });
-
-      cartTotalElement.textContent = formatCurrency(totalDue);
-      completeSaleBtn.disabled = false;
-      clearCartBtn.disabled = false;
-    }
-
-    function removeItemFromCart(index) {
-      currentTransactionItems.splice(index, 1);
-      updateCartDisplay();
-    }
-
-    function clearCart() {
-      currentTransactionItems = [];
-      updateCartDisplay();
-      document.getElementById("receipt").style.display = "none"; // Hide receipt if cart is cleared
-    }
-
-    async function completeSale() {
-      if (currentTransactionItems.length === 0) {
-        alert("Cart is empty. Please add products to sell.");
-        return;
-      }
-
-      const receiptContentDiv = document.getElementById("receiptContent");
-      receiptContentDiv.innerHTML = ''; // Clear previous receipt content
-      let grandTotal = 0;
-
-      // Build receipt content first
-      currentTransactionItems.forEach(item => {
-        receiptContentDiv.innerHTML += `
-          <div class="receipt-item">
-            <span>${item.product} x ${item.quantity} ${item.unit}</span>
-            <span>${formatCurrency(item.total)}</span>
-          </div>
-        `;
-        grandTotal += item.total;
-      });
-
-      receiptContentDiv.innerHTML += `
-        <div class="receipt-total">
-          <span>Grand Total:</span>
-          <span>${formatCurrency(grandTotal)}</span>
-        </div>
-        <p style="text-align: center; margin-top: 15px; font-size: 0.8em;"><em>${new Date().toLocaleString()}</em></p>
-      `;
-
-      // Now send data to Google Sheet for each item
-      let allSalesSuccessful = true;
-      for (const item of currentTransactionItems) {
-        const data = {
-          action: "sell",
-          product: item.product,
-          unit: item.unit,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.total
-        };
-
-        const params = new URLSearchParams(data);
+    
+    // --- Data Fetching and UI Refreshing ---
+    async function refreshAllData() {
+        showLoader(true);
         try {
-          // Use await to ensure each sale is processed sequentially for inventory updates
-          const response = await fetch(SHEET_URL, { method: "POST", body: params });
-          if (!response.ok) {
-            console.error(`Error selling ${item.product}:`, response.statusText);
-            allSalesSuccessful = false;
-            // You might want to break here or alert the user about the specific item failure
-          }
+            await Promise.all([loadInventory(), loadSalesToday(), loadSalesHistory(), loadExpensesHistory()]);
         } catch (error) {
-          console.error("Network error selling product:", item.product, error);
-          allSalesSuccessful = false;
-          // alert(`Network error selling ${item.product}. Please check connection.`);
+            console.error("Failed to refresh data:", error);
+            alert("Could not refresh all data. Please check your connection and console for details.");
+        } finally {
+            showLoader(false);
         }
-      }
-
-      if (allSalesSuccessful) {
-        document.getElementById("receipt").style.display = "block";
-        clearCart(); // Clear cart after successful sale
-        await fetchInventory(); // Refresh stock
-        await loadDashboard(); // Refresh report
-      } else {
-        alert("Some items failed to sell. Please check console for errors and retry specific items if needed.");
-        // Do not clear cart if not all sales were successful, allow user to retry
-      }
     }
-
-    // --- Print Function for Receipt ---
-    function printReceipt() {
-        const receiptDiv = document.getElementById("receipt");
-        // Create a temporary clone to remove the button, etc. for printing
-        const receiptContentClone = receiptDiv.cloneNode(true);
-        receiptContentClone.style.display = 'block'; // Ensure it's visible in the clone
-        // Find and remove the print button from the clone
-        const printButton = receiptContentClone.querySelector('button');
-        if (printButton) {
-            printButton.remove();
-        }
-
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write('<html><head><title>LLAVORE VARIETY STORE - Receipt</title>');
-
-        // Copy essential styles for the receipt
-        printWindow.document.write('<style>');
-        printWindow.document.write(`
-            body { font-family: Arial, sans-serif; margin: 0; padding: 1rem; color: #333; }
-            .receipt {
-                background:#fff;
-                padding:1.5rem;
-                border:1px solid #eee;
-                border-radius:8px;
-                margin: 0 auto; /* Center the receipt if opened directly */
-                width: 300px; /* Adjust width for receipt feel */
-                max-width: 90%;
+    
+    async function fetchData(action) {
+        if (!navigator.onLine) return [];
+        try {
+            const res = await fetch(`${SHEET_URL}?action=${action}`);
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Server responded with status ${res.status}: ${errorText}`);
             }
-            .receipt p { margin: 5px 0; line-height: 1.4; }
-            .receipt-item { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dashed #eee; }
-            .receipt-total { font-weight: bold; margin-top: 10px; border-top: 2px solid #333; padding-top: 10px; }
-            .store-name { text-align: center; font-size: 1.8rem; font-weight: bold; margin-bottom: 1rem; color: #009688; }
-            /* Hide the print button itself on the printout, just in case */
-            button { display: none !important; }
-        `);
-        printWindow.document.write('</style>');
-        printWindow.document.write('</head><body>');
-        printWindow.document.write(receiptContentClone.outerHTML); // Use outerHTML to include the .receipt div itself
-        printWindow.document.write('</body></html>');
-        printWindow.document.close(); // Close the document opened by .write()
-
-        // Wait for content to load, then print
-        printWindow.onload = function() {
-            printWindow.focus(); // Focus the new window
-            printWindow.print(); // Trigger the print dialog
-            // printWindow.close(); // Optional: Close the window after printing
-        };
+            return await res.json();
+        } catch (e) {
+            console.error(`Failed to load ${action}:`, e);
+            throw e;
+        }
     }
 
+    async function loadInventory() {
+        const data = await fetchData('getInventory');
+        inventoryData = data.slice(1);
+        const dropdown = document.getElementById("sell_product");
+        dropdown.innerHTML = '<option value="">Select Product</option>';
+        inventoryData.forEach(row => {
+          if(parseInt(row[2], 10) > 0) {
+            dropdown.innerHTML += `<option value="${row[0]}">${row[0]} (Stock: ${row[2]}, Price: ₱${row[4]})</option>`;
+          }
+        });
+        document.getElementById("totalItems").textContent = inventoryData.length;
+    }
+
+    async function loadSalesToday() {
+        if (!navigator.onLine) return;
+        const data = await fetchData('todaySales');
+        document.getElementById("totalSales").textContent = "₱" + parseFloat(data.total || 0).toFixed(2);
+    }
+
+    async function loadSalesHistory() {
+        const data = await fetchData('getSales');
+        const tbody = document.querySelector("#salesTable tbody");
+        tbody.innerHTML = data.slice(1).reverse().map(row => `<tr><td>${row[1]}</td><td>${row[3]}</td><td>₱${parseFloat(row[5]).toFixed(2)}</td><td>${new Date(row[0]).toLocaleString()}</td></tr>`).join('');
+    }
+
+    async function loadExpensesHistory() {
+        const data = await fetchData('getExpenses');
+        const tbody = document.querySelector("#expensesTable tbody");
+        tbody.innerHTML = data.slice(1).reverse().map(row => `<tr><td>${row[1]}</td><td>₱${parseFloat(row[2]).toFixed(2)}</td><td>${row[3]}</td><td>${new Date(row[0]).toLocaleString()}</td></tr>`).join('');
+    }
+
+
+    // --- Core POS Logic ---
+    function addToCart() {
+      const name = document.getElementById("sell_product").value;
+      const qty = parseInt(document.getElementById("sell_qty").value, 10);
+      
+      if (!name || !qty || qty <= 0) {
+        alert("Please select a product and enter a valid quantity.");
+        return;
+      }
+
+      const item = inventoryData.find(p => p[0] === name);
+      if (!item) {
+        alert("Product not found in inventory.");
+        return;
+      }
+
+      const availableStock = parseInt(item[2], 10);
+      const existingCartItem = cart.find(i => i.name === name);
+      const qtyInCart = existingCartItem ? existingCartItem.qty : 0;
+
+      if (qty + qtyInCart > availableStock) {
+        alert(`❌ Not enough stock! Available: ${availableStock}, In Cart: ${qtyInCart}`);
+        return;
+      }
+
+      if (existingCartItem) {
+        existingCartItem.qty += qty;
+        existingCartItem.total = existingCartItem.qty * existingCartItem.price;
+      } else {
+        const price = parseFloat(item[4]);
+        cart.push({ name, qty, price, total: qty * price });
+      }
+      updateCartUI();
+      document.getElementById("sell_qty").value = '';
+    }
+
+    function updateCartUI() {
+      const tbody = document.querySelector("#cartTable tbody");
+      tbody.innerHTML = cart.map((item, i) => `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.qty}</td>
+          <td>₱${item.price.toFixed(2)}</td>
+          <td>₱${item.total.toFixed(2)}</td>
+          <td><button class="btn-danger" onclick="removeCart(${i})">❌</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function removeCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+    
+    function resetSaleUI() {
+        cart = [];
+        updateCartUI();
+        document.getElementById("cash_received").value = '';
+        document.getElementById("cash_change").value = '';
+        document.getElementById("receipt").style.display = 'none';
+    }
+
+    // ## MODIFICATION 2: Renamed function from checkoutCart to processSale
+    async function processSale() {
+      if (cart.length === 0) return alert("Cart is empty!");
+      const total = cart.reduce((sum, item) => sum + item.total, 0);
+      const cash = parseFloat(document.getElementById("cash_received").value);
+      if (isNaN(cash) || cash < total) return alert("Cash received is not enough or invalid!");
+      
+      showLoader(true);
+      
+      const change = cash - total;
+      document.getElementById("cash_change").value = `₱${change.toFixed(2)}`;
+      const time = new Date();
+      const timeISO = time.toISOString();
+      // Using local time for the receipt display
+      const timeLocal = time.toLocaleString('en-US', { timeZone: 'Asia/Manila' });
+      let receiptHTML = "";
+
+      try {
+        const salePromises = cart.map(item => {
+          const data = { action: "sell", product: item.name, unit: "", quantity: item.qty, price: item.price, total: item.total, time: timeISO };
+          receiptHTML += `<p>${item.name} x${item.qty} - ₱${item.total.toFixed(2)}</p>`;
+          
+          if (navigator.onLine) {
+            return fetch(SHEET_URL, { method: "POST", body: new URLSearchParams(data) });
+          } else {
+            syncQueue.push(data);
+            return Promise.resolve();
+          }
+        });
+
+        await Promise.all(salePromises);
+
+        localStorage.setItem("syncQueue", JSON.stringify(syncQueue));
+        receiptHTML += `<hr><p><strong>Total:</strong> ₱${total.toFixed(2)}</p>`;
+        receiptHTML += `<p><strong>Cash:</strong> ₱${cash.toFixed(2)}</p>`;
+        receiptHTML += `<p><strong>Change:</strong> ₱${change.toFixed(2)}</p>`;
+        receiptHTML += `<br><p><em>${timeLocal}</em></p>`;
+        
+        document.getElementById("receiptContent").innerHTML = receiptHTML;
+        document.getElementById("receipt").style.display = "block";
+        
+        // Clear inputs but keep receipt visible
+        cart = [];
+        updateCartUI();
+        document.getElementById("cash_received").value = '';
+        
+        await refreshAllData();
+        
+      } catch(error) {
+        console.error("Sale processing failed:", error);
+        alert("An error occurred during the sale. Please try again.");
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function addProduct() {
+      const name = document.getElementById("add_name").value;
+      const unit = document.getElementById("add_unit").value;
+      const cost = parseFloat(document.getElementById("add_buy_price").value);
+      const price = parseFloat(document.getElementById("add_price").value);
+      const quantity = parseInt(document.getElementById("add_stock").value, 10);
+      const paid = document.getElementById("add_paid").value;
+
+      if(!name || !unit || isNaN(cost) || isNaN(price) || isNaN(quantity)) {
+          return alert("Please fill all fields with valid values.");
+      }
+
+      showLoader(true);
+      
+      try {
+        const stockData = new URLSearchParams({ action: "stockin", product: name, unit, cost, price, quantity, paid });
+        const expenseData = new URLSearchParams({ action: "expense", description: `Stock-in: ${quantity}x ${name}`, amount: (cost * quantity).toFixed(2), status: paid });
+
+        if (navigator.onLine) {
+            await fetch(SHEET_URL, { method: "POST", body: stockData });
+            await fetch(SHEET_URL, { method: "POST", body: expenseData });
+        } else {
+            syncQueue.push(Object.fromEntries(stockData));
+            syncQueue.push(Object.fromEntries(expenseData));
+            localStorage.setItem("syncQueue", JSON.stringify(syncQueue));
+        }
+
+        alert("✅ Product added and expense recorded!");
+        ['add_name', 'add_unit', 'add_buy_price', 'add_price', 'add_stock'].forEach(id => document.getElementById(id).value = '');
+        await refreshAllData();
+
+      } catch(error) {
+        console.error("Add product failed:", error);
+        alert("An error occurred while adding the product.");
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    async function syncOfflineData() {
+      if (!navigator.onLine || syncQueue.length === 0) return;
+
+      alert(`Back online! Syncing ${syncQueue.length} offline transaction(s).`);
+      const unsynced = [...syncQueue];
+      syncQueue = [];
+
+      try {
+          const syncPromises = unsynced.map(item => fetch(SHEET_URL, { method: "POST", body: new URLSearchParams(item) }));
+          await Promise.all(syncPromises);
+          alert("✅ Sync complete!");
+      } catch (e) {
+          console.warn("❌ Sync failed. Re-queuing failed items.", e);
+          syncQueue = [...unsynced, ...syncQueue];
+      } finally {
+          localStorage.setItem("syncQueue", JSON.stringify(syncQueue));
+          await refreshAllData();
+      }
+    }
+    
     // --- Initial Load ---
-    window.onload = async () => {
-      await fetchInventory();
-      await loadDashboard();
+    window.onload = () => {
+      updateStatus();
+      refreshAllData();
+      toggleSection('cartSection');
     };
   </script>
-
 </body>
 </html>
